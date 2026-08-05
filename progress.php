@@ -18,10 +18,9 @@ if (file_exists($doneFile)) {
     if ($result === 'ERROR') {
         $logContent = file_exists($logFile) ? file_get_contents($logFile) : '';
         
-        // Extraer las últimas 3 líneas del log para mostrar el error exacto
-        $lines = array_filter(explode("\n", trim($logContent)));
-        $lastLines = array_slice($lines, -3);
-        $errorMsg = !empty($lastLines) ? implode(' | ', $lastLines) : 'Error desconocido al ejecutar yt-dlp.';
+        // Limpiar saltos de línea para mostrar el error exacto en la barra
+        $cleanLog = trim(preg_replace('/\s+/', ' ', $logContent));
+        $errorMsg = !empty($cleanLog) ? $cleanLog : 'Error al ejecutar yt-dlp en el servidor.';
 
         @unlink($logFile);
         @unlink($doneFile);
