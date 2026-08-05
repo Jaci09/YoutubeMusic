@@ -35,9 +35,14 @@ $doneFile = $downloadDir . '/' . $downloadId . '.done';
 
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
-// Parámetros con clientes ios,mweb para evasión de bloqueos en IPs de la nube
+// Detección automática de cookies.txt si existe en el proyecto
+$cookiesFile = __DIR__ . '/cookies.txt';
+$cookieFlag  = file_exists($cookiesFile) ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' : '';
+
+// Clientes tv_embedded y web_embedded para eludir bloqueos de IP
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
-           '--extractor-args "youtube:player_client=ios,mweb,android" ' .
+           $cookieFlag .
+           '--extractor-args "youtube:player_client=tv_embedded,web_embedded,android" ' .
            '-x --audio-format mp3 --audio-quality 0 ' .
            '--postprocessor-args "ExtractAudio:-b:a 320k" ' .
            '--embed-thumbnail --convert-thumbnails jpg ' .
