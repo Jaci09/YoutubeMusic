@@ -34,13 +34,13 @@ $logFile  = $downloadDir . '/' . $downloadId . '.log';
 $doneFile = $downloadDir . '/' . $downloadId . '.done';
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
+// Crear el archivo log inmediatamente para desbloquear progress.php
+file_put_contents($logFile, "[download] 5% Conectando con los servidores de YouTube...\n");
+
 $cookiesFile = __DIR__ . '/cookies.txt';
 $cookieFlag  = file_exists($cookiesFile) ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' : '';
 
-// Marcador inicial para desbloquear "Iniciando servidor" en la pantalla rosa
-file_put_contents($logFile, "[download] 5% Conectando con YouTube Music...\n");
-
-// Comando optimizado con extracción automática de audio
+// Comando simplificado y directo
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
            $cookieFlag .
            '-f "bestaudio/best" ' .
@@ -51,10 +51,10 @@ $cmdArgs = '--no-playlist --newline --no-warnings ' .
            '-o ' . escapeshellarg($outTemplate) . ' ' .
            escapeshellarg($url);
 
-$fullCmd = "yt-dlp " . $cmdArgs . " >> " . escapeshellarg($logFile) . " 2>&1";
-$execBg  = "(" . $fullCmd . " && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . ") > /dev/null 2>&1 &";
+$execCmd = "yt-dlp " . $cmdArgs . " >> " . escapeshellarg($logFile) . " 2>&1";
 
-exec($execBg);
+// Ejecutar en segundo plano mediante nohup en Linux
+system("nohup " . $execCmd . " > /dev/null 2>&1 && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . " &");
 
 echo json_encode([
     'success' => true,
