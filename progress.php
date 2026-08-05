@@ -12,17 +12,23 @@ $downloadDir = __DIR__ . '/temp_downloads';
 $logFile  = $downloadDir . '/' . $downloadId . '.log';
 $doneFile = $downloadDir . '/' . $downloadId . '.done';
 
-// Si el proceso de Windows terminó completamente
 if (file_exists($doneFile)) {
     $result = trim(file_get_contents($doneFile));
     
     if ($result === 'ERROR') {
+        $logContent = file_exists($logFile) ? file_get_contents($logFile) : '';
+        
+        // Extraer la causa exacta devuelta por yt-dlp
+        preg_match_all('/ERROR:\s*(.*)/i', $logContent, $matches);
+        $errorMsg = !empty($matches[1]) ? end($matches[1]) : 'Error al procesar el audio en el servidor.';
+
         @unlink($logFile);
         @unlink($doneFile);
+
         echo json_encode([
             'progress' => 0,
             'status' => 'error',
-            'message' => 'Error procesando el audio en el servidor.'
+            'message' => $errorMsg
         ]);
         exit;
     }
@@ -30,21 +36,20 @@ if (file_exists($doneFile)) {
     echo json_encode([
         'progress' => 100,
         'status' => 'finished',
-        'message' => '¡Audio procesado! Descargando a tu dispositivo...'
+        'message' => '¡Audio procesado! Descargando archivo MP3...'
     ]);
     exit;
 }
 
-// Seguimiento del progreso visual mientras trabaja FFmpeg
 if (file_exists($logFile)) {
     $content = file_get_contents($logFile);
 
     preg_match_all('/\[download\]\s+([\d\.]+)%/i', $content, $matches);
     $percent = !empty($matches[1]) ? floatval(end($matches[1])) : 5;
 
-    $statusMsg = 'Descargando audio... ' . round($percent) . '%';
-    if ($percent >= 99) {
-        $statusMsg = 'Incrustando portada HD y metadatos (Espere un momento)...';
+    $statusMsg = 'Descargando audio de alta calidad... ' . round($percent) . '%';
+    if ($percent >= 98) {
+        $statusMsg = 'Incrustando portada HD y metadatos...';
     }
 
     echo json_encode([
