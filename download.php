@@ -18,7 +18,7 @@ if (empty($url)) {
 if (strpos($url, 'music.youtube.com') === false && strpos($url, 'youtube.com') === false) {
     echo json_encode([
         'success' => false, 
-        'error' => 'Solo se permiten enlaces de YouTube Music.'
+        'error' => 'Solo se permiten enlaces pertenecientes a YouTube Music.'
     ]);
     exit;
 }
@@ -34,13 +34,20 @@ $logFile  = $downloadDir . '/' . $downloadId . '.log';
 $doneFile = $downloadDir . '/' . $downloadId . '.done';
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
-// Crear el archivo log inmediatamente para desbloquear progress.php
-file_put_contents($logFile, "[download] 5% Conectando con los servidores de YouTube...\n");
+// Ruta absoluta donde Docker instala yt-dlp en Linux
+$ytdlpBin = '/usr/local/bin/yt-dlp';
+if (!file_exists($ytdlpBin)) {
+    $ytdlpBin = 'yt-dlp'; // Fallback
+}
 
 $cookiesFile = __DIR__ . '/cookies.txt';
-$cookieFlag  = file_exists($cookiesFile) ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' : '';
+$cookieFlag  = (file_exists($cookiesFile) && filesize($cookiesFile) > 0) 
+    ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' 
+    : '';
 
-// Comando simplificado y directo
+// Inicializar el log con marca de tiempo
+file_put_contents($logFile, "[download] Conectando con los servidores de YouTube...\n");
+
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
            $cookieFlag .
            '-f "bestaudio/best" ' .
@@ -51,10 +58,19 @@ $cmdArgs = '--no-playlist --newline --no-warnings ' .
            '-o ' . escapeshellarg($outTemplate) . ' ' .
            escapeshellarg($url);
 
-$execCmd = "yt-dlp " . $cmdArgs . " >> " . escapeshellarg($logFile) . " 2>&1";
+// Subshell robusto con ruta absoluta para Linux
+$innerCmd = sprintf(
+    '%s %s >> %s 2>&1 && echo OK > %s || echo ERROR > %s',
+    $ytdlpBin,
+    $cmdArgs,
+    escapeshellarg($logFile),
+    escapeshellarg($doneFile),
+    escapeshellarg($doneFile)
+);
 
-// Ejecutar en segundo plano mediante nohup en Linux
-system("nohup " . $execCmd . " > /dev/null 2>&1 && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . " &");
+$bgCmd = 'nohup sh -c ' . escapeshellarg($innerCmd) . ' > /dev/null 2>&1 &';
+
+exec($bgCmd);
 
 echo json_encode([
     'success' => true,
