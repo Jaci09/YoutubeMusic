@@ -35,14 +35,14 @@ $doneFile = $downloadDir . '/' . $downloadId . '.done';
 
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
-// Detección automática de cookies.txt si existe en el proyecto
 $cookiesFile = __DIR__ . '/cookies.txt';
 $cookieFlag  = file_exists($cookiesFile) ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' : '';
 
-// Clientes tv_embedded y web_embedded para eludir bloqueos de IP
+// -f "ba/b" fuerza la selección del mejor flujo de audio disponible para convertir a MP3
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
            $cookieFlag .
-           '--extractor-args "youtube:player_client=tv_embedded,web_embedded,android" ' .
+           '-f "ba/b" ' .
+           '--extractor-args "youtube:player_client=android,ios,mweb,web" ' .
            '-x --audio-format mp3 --audio-quality 0 ' .
            '--postprocessor-args "ExtractAudio:-b:a 320k" ' .
            '--embed-thumbnail --convert-thumbnails jpg ' .
