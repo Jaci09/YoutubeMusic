@@ -18,9 +18,16 @@ if (file_exists($doneFile)) {
     if ($result === 'ERROR') {
         $logContent = file_exists($logFile) ? file_get_contents($logFile) : '';
         
-        // Limpiar saltos de línea para mostrar el error exacto en la barra
-        $cleanLog = trim(preg_replace('/\s+/', ' ', $logContent));
-        $errorMsg = !empty($cleanLog) ? $cleanLog : 'Error al ejecutar yt-dlp en el servidor.';
+        // Extraer las líneas con la falla explícita
+        $lines = array_filter(explode("\n", trim($logContent)));
+        $errorLines = array_values(array_filter($lines, function($line) {
+            return stripos($line, 'ERROR') !== false || stripos($line, 'WARNING') !== false;
+        }));
+
+        $finalError = !empty($errorLines) ? implode(' | ', $errorLines) : end($lines);
+        if (empty($finalError)) {
+            $finalError = 'No se pudo generar el archivo de salida en Render.';
+        }
 
         @unlink($logFile);
         @unlink($doneFile);
@@ -28,7 +35,7 @@ if (file_exists($doneFile)) {
         echo json_encode([
             'progress' => 0,
             'status' => 'error',
-            'message' => $errorMsg
+            'message' => $finalError
         ]);
         exit;
     }
@@ -36,7 +43,7 @@ if (file_exists($doneFile)) {
     echo json_encode([
         'progress' => 100,
         'status' => 'finished',
-        'message' => '¡Audio procesado! Descargando archivo MP3...'
+        'message' => '¡Audio procesado! Descargando MP3...'
     ]);
     exit;
 }
@@ -45,11 +52,11 @@ if (file_exists($logFile)) {
     $content = file_get_contents($logFile);
 
     preg_match_all('/\[download\]\s+([\d\.]+)%/i', $content, $matches);
-    $percent = !empty($matches[1]) ? floatval(end($matches[1])) : 10;
+    $percent = !empty($matches[1]) ? floatval(end($matches[1])) : 5;
 
     $statusMsg = 'Descargando audio... ' . round($percent) . '%';
     if ($percent >= 98) {
-        $statusMsg = 'Incrustando portada HD y metadatos...';
+        $statusMsg = 'Incrustando carátula y metadatos...';
     }
 
     echo json_encode([
@@ -60,6 +67,6 @@ if (file_exists($logFile)) {
     exit;
 }
 
-echo json_encode(['progress' => 5, 'status' => 'downloading', 'message' => 'Iniciando conexión...']);
+echo json_encode(['progress' => 2, 'status' => 'downloading', 'message' => 'Iniciando conexión con YouTube...']);
 exit;
 ?>
