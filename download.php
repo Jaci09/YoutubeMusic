@@ -15,10 +15,10 @@ if (empty($url)) {
     exit;
 }
 
-if (strpos($url, 'music.youtube.com') === false) {
+if (strpos($url, 'music.youtube.com') === false && strpos($url, 'youtube.com') === false) {
     echo json_encode([
         'success' => false, 
-        'error' => 'Solo se permiten enlaces pertenecientes a YouTube Music (music.youtube.com).'
+        'error' => 'Solo se permiten enlaces de YouTube Music.'
     ]);
     exit;
 }
@@ -32,17 +32,18 @@ $downloadId = uniqid('dl_', true);
 
 $logFile  = $downloadDir . '/' . $downloadId . '.log';
 $doneFile = $downloadDir . '/' . $downloadId . '.done';
-
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
 $cookiesFile = __DIR__ . '/cookies.txt';
 $cookieFlag  = file_exists($cookiesFile) ? '--cookies ' . escapeshellarg($cookiesFile) . ' ' : '';
 
-// -f "ba/b" fuerza la selección del mejor flujo de audio disponible para convertir a MP3
+// Marcador inicial para desbloquear "Iniciando servidor" en la pantalla rosa
+file_put_contents($logFile, "[download] 5% Conectando con YouTube Music...\n");
+
+// Comando optimizado con extracción automática de audio
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
            $cookieFlag .
-           '-f "ba/b" ' .
-           '--extractor-args "youtube:player_client=android,ios,mweb,web" ' .
+           '-f "bestaudio/best" ' .
            '-x --audio-format mp3 --audio-quality 0 ' .
            '--postprocessor-args "ExtractAudio:-b:a 320k" ' .
            '--embed-thumbnail --convert-thumbnails jpg ' .
@@ -50,9 +51,10 @@ $cmdArgs = '--no-playlist --newline --no-warnings ' .
            '-o ' . escapeshellarg($outTemplate) . ' ' .
            escapeshellarg($url);
 
-$cmd = "(yt-dlp " . $cmdArgs . " > " . escapeshellarg($logFile) . " 2>&1 && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . ") > /dev/null 2>&1 &";
+$fullCmd = "yt-dlp " . $cmdArgs . " >> " . escapeshellarg($logFile) . " 2>&1";
+$execBg  = "(" . $fullCmd . " && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . ") > /dev/null 2>&1 &";
 
-exec($cmd);
+exec($execBg);
 
 echo json_encode([
     'success' => true,
