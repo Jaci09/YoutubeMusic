@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Instalar FFmpeg, Python, Pillow y AtomicParsley para metadatos/portadas
+# Instalar FFmpeg, Python, Pillow y AtomicParsley
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
@@ -13,6 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 COPY . /var/www/html/
 
-RUN mkdir -p /var/www/html/temp_downloads && chmod -R 777 /var/www/html/temp_downloads
+# Crear carpeta temporal y asignar permisos de lectura/escritura a Apache (www-data)
+RUN mkdir -p /var/www/html/temp_downloads && \
+    chown -R www-data:www-data /var/www/html && \
+    chmod -R 777 /var/www/html
 
 EXPOSE 80
