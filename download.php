@@ -33,11 +33,11 @@ $downloadId = uniqid('dl_', true);
 $logFile  = $downloadDir . '/' . $downloadId . '.log';
 $doneFile = $downloadDir . '/' . $downloadId . '.done';
 
-// En Linux no se usa el doble %, se pasa %(title)s directo
 $outTemplate = $downloadDir . '/' . $downloadId . '_FINAL_%(title)s.%(ext)s';
 
+// Parámetros con clientes ios,mweb para evasión de bloqueos en IPs de la nube
 $cmdArgs = '--no-playlist --newline --no-warnings ' .
-           '--extractor-args "youtube:player_client=android,web" ' .
+           '--extractor-args "youtube:player_client=ios,mweb,android" ' .
            '-x --audio-format mp3 --audio-quality 0 ' .
            '--postprocessor-args "ExtractAudio:-b:a 320k" ' .
            '--embed-thumbnail --convert-thumbnails jpg ' .
@@ -45,7 +45,6 @@ $cmdArgs = '--no-playlist --newline --no-warnings ' .
            '-o ' . escapeshellarg($outTemplate) . ' ' .
            escapeshellarg($url);
 
-// Ejecución en segundo plano nativa en Linux (& al final e independizada)
 $cmd = "(yt-dlp " . $cmdArgs . " > " . escapeshellarg($logFile) . " 2>&1 && echo OK > " . escapeshellarg($doneFile) . " || echo ERROR > " . escapeshellarg($doneFile) . ") > /dev/null 2>&1 &";
 
 exec($cmd);
