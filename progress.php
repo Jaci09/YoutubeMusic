@@ -18,8 +18,10 @@ if (file_exists($doneFile)) {
     if ($result === 'ERROR') {
         $logContent = file_exists($logFile) ? file_get_contents($logFile) : '';
         
-        preg_match_all('/ERROR:\s*(.*)/i', $logContent, $matches);
-        $errorMsg = !empty($matches[1]) ? end($matches[1]) : 'Error al procesar el audio.';
+        // Extraer las últimas 3 líneas del log para mostrar el error exacto
+        $lines = array_filter(explode("\n", trim($logContent)));
+        $lastLines = array_slice($lines, -3);
+        $errorMsg = !empty($lastLines) ? implode(' | ', $lastLines) : 'Error desconocido al ejecutar yt-dlp.';
 
         @unlink($logFile);
         @unlink($doneFile);
